@@ -165,7 +165,6 @@ cc_library(
 
 cc_library(
     name = "platform_impl",
-    testonly = True,
     tags = ["keep_dep"],  # Prevent build_cleaner from removing the dependency.
     visibility = [
         "//:__subpackages__",
@@ -175,6 +174,9 @@ cc_library(
     ] + select({
         "@platforms//os:windows": [
             "//internal/platform/implementation/windows",
+        ],
+        "@platforms//os:linux": [
+            "//internal/platform/implementation/linux",
         ],
         "//conditions:default": [
             "//internal/platform/implementation/g3",

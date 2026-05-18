@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Quick Share
+Comment=Share files with nearby devices
+Exec=/home/kayode-olalere/Codes/nearby-linux/build-ui/quick-share-ubuntu
+Icon=/home/kayode-olalere/Codes/nearby-linux/app/ui-gtk/data/app-icon.png
+Terminal=false
+Type=Application
+Categories=Network;FileTransfer;
+StartupWMClass=quick-share
+Keywords=nearby;share;transfer;

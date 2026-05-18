@@ -64,7 +64,17 @@ class FilePath {
   // TODO: b/418255947  - Remove after migration is complete.
   std::filesystem::path GetPath() const { return path_; }
 
-  friend auto operator<=>(const FilePath& lhs, const FilePath& rhs) = default;
+  friend bool operator==(const FilePath& lhs, const FilePath& rhs) {
+    return lhs.path_ == rhs.path_;
+  }
+
+  friend bool operator!=(const FilePath& lhs, const FilePath& rhs) {
+    return !(lhs == rhs);
+  }
+
+  friend bool operator<(const FilePath& lhs, const FilePath& rhs) {
+    return lhs.path_ < rhs.path_;
+  }
 
   // Hash function for absl containers.
   template <typename H>

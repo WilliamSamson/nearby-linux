@@ -62,8 +62,17 @@ class MacAddress {
     return H::combine(std::move(h), addr.address_);
   }
 
-  friend auto operator<=>(const MacAddress& lhs,
-                          const MacAddress& rhs) = default;
+  friend bool operator==(const MacAddress& lhs, const MacAddress& rhs) {
+    return lhs.address_ == rhs.address_;
+  }
+
+  friend bool operator!=(const MacAddress& lhs, const MacAddress& rhs) {
+    return !(lhs == rhs);
+  }
+
+  friend bool operator<(const MacAddress& lhs, const MacAddress& rhs) {
+    return lhs.address_ < rhs.address_;
+  }
 
  private:
   uint64_t address_ = 0;

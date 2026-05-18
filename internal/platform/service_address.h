@@ -32,7 +32,13 @@ struct ServiceAddress {
   std::vector<char> address;
   uint16_t port;
 
-  bool operator==(const ServiceAddress& other) const = default;
+  bool operator==(const ServiceAddress& other) const {
+    return address == other.address && port == other.port;
+  }
+
+  bool operator!=(const ServiceAddress& other) const {
+    return !(*this == other);
+  }
 };
 
 // Support logging of ServiceAddress.

@@ -100,6 +100,7 @@ http_archive(
 #   https://github.com/inazarenko/protobuf-matchers
 http_archive(
     name = "com_github_protobuf_matchers",
-    strip_prefix = "protobuf-matchers-master",
-    urls = ["https://github.com/inazarenko/protobuf-matchers/archive/refs/heads/master.zip"],
+    integrity = "sha256-9TlgQ+Ji8df8Jcnui8jRl/gBmSipFJIKPnp7ilwiWhg=",
+    strip_prefix = "protobuf-matchers-main",
+    urls = ["https://github.com/inazarenko/protobuf-matchers/archive/refs/heads/main.zip"],
 )
