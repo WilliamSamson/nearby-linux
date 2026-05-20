@@ -27,7 +27,6 @@ cc_library(
     hdrs = [
         "device_paths.h",
     ],
-    compatible_with = ["//buildenv/target:non_prod"],
     linkopts = [
         "ole32.lib",
         "shell32.lib",
@@ -143,7 +142,6 @@ cc_library(
     hdrs = [
         "network_info.h",
     ],
-    compatible_with = ["//buildenv/target:non_prod"],
     defines = [
         "_WIN32_WINNT=_WIN32_WINNT_WIN10",
         "WINVER=_WIN32_WINNT_WIN10",
@@ -168,7 +166,6 @@ cc_library(
     hdrs = [
         "scoped_wlan_memory.h",
     ],
-    compatible_with = ["//buildenv/target:non_prod"],
     tags = ["windows"],
     visibility = ["//location/nearby:__subpackages__"],
 )
@@ -181,7 +178,6 @@ cc_library(
     hdrs = [
         "wlan_client.h",
     ],
-    compatible_with = ["//buildenv/target:non_prod"],
     tags = ["windows"],
     visibility = ["//location/nearby:__subpackages__"],
     deps = [
@@ -396,7 +392,6 @@ cc_library(
     hdrs = [
         "socket_address.h",
     ],
-    compatible_with = ["//buildenv/target:non_prod"],
     defines = [
         "_WIN32_WINNT=_WIN32_WINNT_WIN10",
         "WINVER=_WIN32_WINNT_WIN10",
@@ -430,13 +425,11 @@ proto_library(
     name = "preferences_manager_test_proto",
     testonly = True,
     srcs = ["preferences_manager_test.proto"],
-    compatible_with = ["//buildenv/target:non_prod"],
 )
 
 cc_proto_library(
     name = "preferences_manager_test_cc_proto",
     testonly = True,
-    compatible_with = ["//buildenv/target:non_prod"],
     deps = [":preferences_manager_test_proto"],
 )
 

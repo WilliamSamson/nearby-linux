@@ -28,8 +28,6 @@
 #include <utility>
 #include <vector>
 
-#include "google/nearby/identity/v1/resources.pb.h"
-#include "google/nearby/identity/v1/rpcs.pb.h"
 #include "google/protobuf/timestamp.pb.h"
 #include "location/nearby/sharing/lib/account/account_manager.h"
 #include "location/nearby/sharing/lib/rpc/sharing_rpc_client.h"
@@ -545,8 +543,8 @@ void NearbyShareCertificateManagerImpl::AddCertifactesToPublishDeviceRequest(
       shared_credential = new_contacts_credential->add_shared_credentials();
       contacts_share_credential_count++;
     }
-    shared_credential->set_id(
-        util_hash::HighwayFingerprint64(public_cert->secret_id()));
+    shared_credential->set_id(util_hash::HighwayFingerprint64(
+        absl::string_view(public_cert->secret_id())));
     shared_credential->set_data(public_cert->SerializeAsString());
     shared_credential->set_data_type(
         SharedCredential::DATA_TYPE_PUBLIC_CERTIFICATE);

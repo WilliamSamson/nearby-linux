@@ -3,7 +3,7 @@
 #
 # What it does on each save:
 #   1. Lists exactly which files changed (mtime-based diff).
-#   2. Warns if an *.c file exists under src/ but isn't in meson.build sources
+#   2. Warns if a source file exists under src/ but isn't in meson.build sources
 #      (this is the #1 reason "it builds but the symbol is missing").
 #   3. Rebuilds. The output is filtered: cc invocations are hidden, errors are
 #      red, warnings are yellow, ninja progress is dim. The previous app keeps
@@ -97,7 +97,7 @@ PID=0
 list_watched() {
   find "$SRC_DIR/src" "$SRC_DIR/meson.build" "$FACADE_DIR" \
        -type f \
-       \( -name '*.c' -o -name '*.h' -o -name 'meson.build' \) \
+       \( -name '*.c' -o -name '*.cc' -o -name '*.cpp' -o -name '*.h' -o -name 'meson.build' \) \
        2>/dev/null | sort
 }
 
@@ -122,7 +122,7 @@ diff_changed() {
   done < <(list_watched)
 }
 
-# Drift: a .c file under src/ that meson.build doesn't reference.
+# Drift: a source file under src/ that meson.build doesn't reference.
 check_orphans() {
   local missing=()
   while IFS= read -r f; do
@@ -130,9 +130,9 @@ check_orphans() {
     if ! grep -qF "$rel" "$SRC_DIR/meson.build" 2>/dev/null; then
       missing+=("$rel")
     fi
-  done < <(find "$SRC_DIR/src" -type f -name '*.c' 2>/dev/null | sort)
+  done < <(find "$SRC_DIR/src" -type f \( -name '*.c' -o -name '*.cc' -o -name '*.cpp' \) 2>/dev/null | sort)
   if (( ${#missing[@]} )); then
-    warn ".c file(s) not listed in meson.build:"
+    warn "source file(s) not listed in meson.build:"
     for m in "${missing[@]}"; do
       printf '       %s%s%s\n' "$Y" "$m" "$X"
     done
@@ -144,7 +144,7 @@ check_orphans() {
 filter() {
   awk -v R="$R" -v Y="$Y" -v D="$D" -v X="$X" '
     /^FAILED:/                { print R $0 X; next }
-    /^cc /                    { next }
+    /^(cc|c\+\+) /              { next }
     /^\[[0-9]+\/[0-9]+\]/     { print D $0 X; next }
     /^ninja:/                 { print D $0 X; next }
     /error:/                  { print R $0 X; next }
@@ -155,7 +155,13 @@ filter() {
 }
 
 build_and_run() {
-  say "building…"
+  say "building C++ library (Bazel)…"
+  if ! bazel build //app/facade:libnearby_bridge.so --check_direct_dependencies=off; then
+    err "C++ BUILD FAILED — previous app still running"
+    return
+  fi
+
+  say "building UI (Meson)…"
   check_orphans
 
   local logfile

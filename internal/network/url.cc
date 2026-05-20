@@ -22,6 +22,7 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -56,10 +57,10 @@ absl::string_view Url::GetFragment() const { return fragment_; }
 
 bool Url::SetUrlPath(absl::string_view url_string) {
   // Refer to: https://www.rfc-editor.org/rfc/rfc3986#page-50
-  if (url_string.starts_with("http://")) {
+  if (absl::StartsWith(url_string, "http://")) {
     url_string = url_string.substr(7);
     scheme_ = "http";
-  } else if (url_string.starts_with("https://")) {
+  } else if (absl::StartsWith(url_string, "https://")) {
     url_string = url_string.substr(8);
     scheme_ = "https";
   } else {

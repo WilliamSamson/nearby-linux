@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef QUICK_SHARE_APP_FACADE_SHARE_SESSION_FACADE_H_
-#define QUICK_SHARE_APP_FACADE_SHARE_SESSION_FACADE_H_
+#ifndef QUICK_SHARE_APP_FACADE_SHARE_SESSION_SERVICE_H_
+#define QUICK_SHARE_APP_FACADE_SHARE_SESSION_SERVICE_H_
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -23,8 +23,7 @@
 extern "C" {
 #endif
 
-// Mirrors sharing/transfer_metadata.h::Status one-to-one. Kept in sync by hand;
-// the UI maps these to screens via ui_state.c.
+// Mirrors sharing/transfer_metadata.h::Status one-to-one.
 typedef enum {
   QS_STATUS_UNKNOWN = 0,
   QS_STATUS_CONNECTING,
@@ -71,8 +70,8 @@ typedef struct {
 
 typedef struct {
   bool is_complete;
-  const char* device_id;           // owned by facade
-  const char* device_name;         // owned by facade
+  const char* device_id;           // owned by service
+  const char* device_name;         // owned by service
   qs_receive_policy_t receive_policy;
   bool usage_reporting_enabled;
 } qs_setup_state_t;
@@ -83,8 +82,8 @@ typedef struct {
   bool bluetooth_powered;
   bool avahi_available;
   bool real_backend_available;
-  const char* summary;             // owned by facade
-  const char* detail;              // owned by facade
+  const char* summary;             // owned by service
+  const char* detail;              // owned by service
 } qs_backend_state_t;
 
 typedef struct {
@@ -93,11 +92,7 @@ typedef struct {
   uint64_t size_bytes;        // 0 if unknown
 } qs_attachment_t;
 
-// Opaque handles. Lifetime rules:
-//  - qs_facade_t outlives every session it produces.
-//  - qs_session_t is valid from the first on_session_changed() callback until
-//    on_session_ended() returns. The UI must not retain it after that.
-typedef struct qs_facade   qs_facade_t;
+typedef struct qs_service  qs_service_t;
 typedef struct qs_session  qs_session_t;
 
 typedef struct {
@@ -108,9 +103,6 @@ typedef struct {
   uint64_t estimated_seconds_remaining;
 } qs_progress_t;
 
-// Threading: callbacks may fire on any thread. UI code is responsible for
-// marshalling to the GTK main loop (e.g. g_main_context_invoke). The mock
-// facade fires its callbacks on the GLib main context for convenience.
 typedef struct {
   void (*on_session_started)(qs_session_t* session, void* user_data);
   void (*on_session_changed)(qs_session_t* session,
@@ -118,78 +110,65 @@ typedef struct {
                              void* user_data);
   void (*on_session_ended)(qs_session_t* session, void* user_data);
   void* user_data;
-} qs_facade_observer_t;
+} qs_service_observer_t;
 
-// ---- Facade lifecycle ------------------------------------------------------
+// ---- Service lifecycle -----------------------------------------------------
 
-qs_facade_t* qs_facade_create_mock(void);
-void         qs_facade_destroy(qs_facade_t* facade);
+qs_service_t* qs_service_create(void);
+void          qs_service_destroy(qs_service_t* service);
 
 // Register exactly one observer. Replaces any prior observer.
-void qs_facade_set_observer(qs_facade_t* facade,
-                            const qs_facade_observer_t* observer);
+void qs_service_set_observer(qs_service_t* service,
+                             const qs_service_observer_t* observer);
 
 // ---- Device setup ----------------------------------------------------------
 
-// Loads durable setup state. Pointer is owned by the facade and remains valid
-// until setup is completed again or the facade is destroyed.
-const qs_setup_state_t* qs_facade_get_setup_state(qs_facade_t* facade);
+const qs_setup_state_t* qs_service_get_setup_state(qs_service_t* service);
 
-// Validates, normalizes, and persists setup. On success, get_setup_state()
-// returns an is_complete=true state with the normalized values.
-qs_setup_result_t qs_facade_complete_setup(qs_facade_t* facade,
+qs_setup_result_t qs_service_complete_setup(qs_service_t* service,
                                            const qs_setup_config_t* config);
 
 const char* qs_setup_result_message(qs_setup_result_t result);
 
-// Returns current runtime backend readiness for real Quick Share receiving.
-// Pointer is owned by the facade and remains valid until the next call.
-const qs_backend_state_t* qs_facade_get_backend_state(qs_facade_t* facade);
+const qs_backend_state_t* qs_service_get_backend_state(qs_service_t* service);
 
 // Toggle whether this device advertises a receive surface.
-void qs_facade_set_visible(qs_facade_t* facade, bool visible);
-bool qs_facade_is_visible(const qs_facade_t* facade);
+void qs_service_set_visible(qs_service_t* service, bool visible);
+bool qs_service_is_visible(const qs_service_t* service);
+
+// Queries/sets save path for received files.
+const char* qs_service_get_save_path(const qs_service_t* service);
+void qs_service_set_save_path(qs_service_t* service, const char* path);
+
+// Queries/sets whether system notifications are enabled.
+bool qs_service_get_notifications_enabled(const qs_service_t* service);
+void qs_service_set_notifications_enabled(qs_service_t* service, bool enabled);
 
 // ---- Session queries -------------------------------------------------------
 
-// Peer device name as advertised. Owned by the session.
 const char* qs_session_peer_name(const qs_session_t* session);
-
-// UKey2 verification token (hex) if the protocol requires user confirmation,
-// NULL otherwise. Owned by the session.
 const char* qs_session_token(const qs_session_t* session);
-
-// Attachments in this session. Pointer is owned by the session and stable
-// until on_session_ended fires.
-size_t                  qs_session_attachment_count(const qs_session_t* session);
-const qs_attachment_t*  qs_session_attachments(const qs_session_t* session);
-
-// Path the file was saved to, valid only after status reaches QS_STATUS_COMPLETE.
-// NULL otherwise. Owned by the session.
+size_t      qs_session_attachment_count(const qs_session_t* session);
+const qs_attachment_t* qs_session_attachments(const qs_session_t* session);
 const char* qs_session_saved_path(const qs_session_t* session);
-
-// Human-readable reason string for terminal failure states. NULL otherwise.
 const char* qs_session_failure_reason(const qs_session_t* session);
 
 // ---- Session actions -------------------------------------------------------
 
-// Valid only while status is QS_STATUS_AWAITING_LOCAL_CONFIRMATION.
 void qs_session_accept(qs_session_t* session);
 void qs_session_reject(qs_session_t* session);
-
-// Valid in any non-final state.
 void qs_session_cancel(qs_session_t* session);
 
 // ---- Send Mode & Discovery -------------------------------------------------
 
 typedef void (*qs_device_discovered_cb)(const char* name, const char* ip, int port, void* user_data);
 
-void qs_facade_start_discovery(qs_facade_t* facade, qs_device_discovered_cb cb, void* user_data);
-void qs_facade_stop_discovery(qs_facade_t* facade);
-void qs_facade_send_file(qs_facade_t* facade, const char* ip, int port, const char* file_path);
+void qs_service_start_discovery(qs_service_t* service, qs_device_discovered_cb cb, void* user_data);
+void qs_service_stop_discovery(qs_service_t* service);
+void qs_service_send_file(qs_service_t* service, const char* ip, int port, const char* file_path);
 
 #ifdef __cplusplus
 }  // extern "C"
 #endif
 
-#endif  // QUICK_SHARE_APP_FACADE_SHARE_SESSION_FACADE_H_
+#endif  // QUICK_SHARE_APP_FACADE_SHARE_SESSION_SERVICE_H_

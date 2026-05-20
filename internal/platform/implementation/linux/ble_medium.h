@@ -10,7 +10,9 @@
 #define THIRD_PARTY_NEARBY_INTERNAL_PLATFORM_IMPLEMENTATION_LINUX_BLE_MEDIUM_H_
 
 #include <memory>
+#include <mutex>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "absl/status/status.h"
@@ -75,6 +77,9 @@ class BleMedium : public api::ble::BleMedium {
   api::BluetoothAdapter& adapter_;
   std::unique_ptr<bluez::AdvertisementHandle> adv_handle_;
   uint32_t scan_subscription_id_ = 0;
+  std::mutex peripherals_mutex_;
+  std::unordered_map<api::ble::BlePeripheral::UniqueId, std::string>
+      peripheral_paths_;
 };
 
 }  // namespace linux_impl

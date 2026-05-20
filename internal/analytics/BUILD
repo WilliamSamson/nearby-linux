@@ -39,7 +39,6 @@ cc_library(
         "mock_event_logger.h",
         "sharing_log_matchers.h",
     ],
-    compatible_with = ["//buildenv/target:non_prod"],
     visibility = ["//visibility:public"],
     deps = [
         ":event_logger",

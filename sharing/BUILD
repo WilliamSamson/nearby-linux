@@ -366,6 +366,7 @@ cc_library(
         "-DNEARBY_SHARING_DLL",
     ],
     visibility = [
+        "//app:__subpackages__",
         "//location/nearby/cpp/sharing:__subpackages__",
         "//location/nearby/sharing/lib:__subpackages__",
         "//location/nearby/sharing/sdk/quick_share_server:__pkg__",

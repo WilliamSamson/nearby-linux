@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pkg-config --modversion gtk4 libadwaita-1 gtkmm-4.0)",
+      "Bash(pkg-config --modversion gtk4 libadwaita-1)",
+      "Bash(gcc --version)",
+      "Bash(meson setup *)",
+      "Bash(meson compile *)",
+      "Bash(pkill -f nearby-share-ubuntu)",
+      "Bash(dpkg -l inotify-tools entr)",
+      "Bash(chmod +x /home/kayode-olalere/Codes/nearby-linux/app/ui-gtk/dev.sh)",
+      "Bash(pkill -f build-ui/nearby-share-ubuntu)",
+      "Bash(chmod +x app/ui-gtk/dev.sh)",
+      "Bash(bash -n app/ui-gtk/dev.sh)",
+      "Bash(python3 -c \"from PIL import Image; print\\('PIL OK'\\)\")",
+      "Bash(python3 *)",
+      "Bash(awk 'NR>=80 && NR<=90 {printf \"%d|%s|\\\\n\", NR, $0}' /home/kayode-olalere/Codes/nearby-linux/app/ui-gtk/src/app_window.c)",
+      "Bash(git -C /home/kayode-olalere/Codes/nearby-linux status --short app/ui-gtk/src/app_window.c)",
+      "Bash(ninja -C build-ui)",
+      "Bash(/tmp/bazelisk version *)",
+      "Bash(/tmp/bazelisk build *)",
+      "Bash(/tmp/bazelisk query *)",
+      "Bash(/tmp/bazelisk test *)"
+    ]
+  }
+}

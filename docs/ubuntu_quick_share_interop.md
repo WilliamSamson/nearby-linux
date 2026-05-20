@@ -152,7 +152,7 @@ progress; small windows collapse to single-column. No glow or gradient effects.
 2. UI shell with setup persistence and backend capability gate (DONE)
    - `app/ui-gtk/` meson project: AdwApplicationWindow, libadwaita styling.
    - `app/facade/share_session_facade.h`: the extern "C" UI ↔ service contract.
-   - `app/facade/mock_facade.c`: setup persistence, backend readiness checks,
+   - `app/facade/nearby_facade.c`: setup persistence, backend readiness checks,
      and a guarded BlueZ BLE fast advertisement path.
    - Responsive layout validated at large, medium (600-900px), small (<600px).
    - Acceptance: app launches; onboarding is one-time; no references to

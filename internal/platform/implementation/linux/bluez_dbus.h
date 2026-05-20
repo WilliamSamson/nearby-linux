@@ -180,6 +180,8 @@ struct GattServerCallbacks {
 // unregistered when the handle is destroyed.
 class GattServerHandle {
  public:
+  struct Impl;
+
   ~GattServerHandle();
 
   GattServerHandle(const GattServerHandle&) = delete;
@@ -197,7 +199,6 @@ class GattServerHandle {
   friend absl::StatusOr<std::unique_ptr<GattServerHandle>> RegisterGattServer(
       const GattServiceDef& service, GattServerCallbacks callbacks);
 
-  struct Impl;
   std::unique_ptr<Impl> impl_;
 };
 

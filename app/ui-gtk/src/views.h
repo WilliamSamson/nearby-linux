@@ -3,13 +3,13 @@
 
 #include <gtk/gtk.h>
 
-#include "share_session_facade.h"
+#include "share_session_service.h"
 
 // Each view owns its widget tree. The opaque struct is freed when the view is
 // destroyed (along with its root widget, via g_object_set_data_full).
 //
 // All views push state via setters and pull events back via small callbacks.
-// They never see the facade directly.
+// They never see the service directly.
 
 // ---- Home -----------------------------------------------------------------
 
@@ -36,6 +36,7 @@ void qs_view_home_set_on_send_file(QsViewHome* v, QsHomeSendFileCb cb, gpointer 
 void qs_view_home_set_on_device_selected(QsViewHome* v, QsHomeDeviceSelectedCb cb, gpointer user_data);
 void qs_view_home_add_discovered_device(QsViewHome* v, const char* name, const char* ip, int port);
 void qs_view_home_reset_send_mode(QsViewHome* v);
+void qs_view_home_set_notifications_enabled(QsViewHome* v, gboolean enabled);
 
 // ---- Incoming -------------------------------------------------------------
 

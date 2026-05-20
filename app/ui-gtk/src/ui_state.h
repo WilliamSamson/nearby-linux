@@ -4,11 +4,11 @@
 #include <gtk/gtk.h>
 #include <adwaita.h>
 
-#include "share_session_facade.h"
+#include "share_session_service.h"
 #include "views.h"
 
 typedef struct {
-  qs_facade_t* facade;            // not owned
+  qs_service_t* service;            // not owned
   AdwViewStack* stack;            // not owned
   AdwToastOverlay* toast_overlay; // not owned
 
@@ -22,9 +22,10 @@ typedef struct {
 
   qs_session_t* current_session;  // valid only between started/ended callbacks
   uint64_t current_total_bytes;
+  char* current_send_file_path;
 } QsUiState;
 
-QsUiState* qs_ui_state_new(qs_facade_t* facade,
+QsUiState* qs_ui_state_new(qs_service_t* service,
                            AdwViewStack* stack,
                            AdwToastOverlay* toast_overlay,
                            QsViewHome* home,

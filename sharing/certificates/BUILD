@@ -42,9 +42,7 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//google/nearby/identity/v1:resources_cc_proto",
-        "//google/nearby/identity/v1:rpcs_cc_proto",
-        "//google/protobuf:timestamp_cc_proto",
+        "@com_google_protobuf//:timestamp_cc_proto",
         "//internal/base",
         "//internal/base:file_path",
         "//internal/crypto_cros",
@@ -126,8 +124,6 @@ cc_test(
     deps = [
         ":certificates",
         ":test_support",
-        "//google/nearby/identity/v1:resources_cc_proto",
-        "//google/nearby/identity/v1:rpcs_cc_proto",
         "//internal/flags:nearby_flags",
         "//internal/platform:mac_address",
         "//internal/platform/implementation:platform_impl",

@@ -2,7 +2,7 @@
 #include <adwaita.h>
 
 #include "app_window.h"
-#include "share_session_facade.h"
+#include "share_session_service.h"
 #include "splash_window.h"
 #include "style.h"
 
@@ -10,8 +10,8 @@
 
 static void on_splash_done(AdwApplication* app,
                            gpointer user_data G_GNUC_UNUSED) {
-  qs_facade_t* facade = qs_facade_create_mock();
-  GtkWidget* window = qs_app_window_new(app, facade);
+  qs_service_t* service = qs_service_create();
+  GtkWidget* window = qs_app_window_new(app, service);
   gtk_window_present(GTK_WINDOW(window));
 }
 

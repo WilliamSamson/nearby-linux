@@ -21,6 +21,7 @@ cc_library(
     name = "utf_utils",
     hdrs = [
         "utf_string_conversions.h",
+        "strings/utf_string_conversions.h",
     ],
     visibility = ["//visibility:public"],
 )

@@ -5,18 +5,18 @@
 
 typedef struct {
   QsUiState* ui_state;
-  qs_facade_t* facade;
+  qs_service_t* service;
 } WindowData;
 
 static void window_data_free(gpointer data, GObject* obj G_GNUC_UNUSED) {
   WindowData* d = data;
   if (!d) return;
   qs_ui_state_free(d->ui_state);
-  qs_facade_destroy(d->facade);
+  qs_service_destroy(d->service);
   g_free(d);
 }
 
-GtkWidget* qs_app_window_new(AdwApplication* app, qs_facade_t* facade) {
+GtkWidget* qs_app_window_new(AdwApplication* app, qs_service_t* service) {
   GtkWidget* window = adw_application_window_new(GTK_APPLICATION(app));
   gtk_window_set_title(GTK_WINDOW(window), "Quick Share");
   gtk_window_set_default_size(GTK_WINDOW(window), 880, 720);
@@ -74,8 +74,8 @@ GtkWidget* qs_app_window_new(AdwApplication* app, qs_facade_t* facade) {
 
   // Wire actions.
   WindowData* data = g_new0(WindowData, 1);
-  data->facade = facade;
-  data->ui_state = qs_ui_state_new(facade, stack, overlay, home, incoming,
+  data->service = service;
+  data->ui_state = qs_ui_state_new(service, stack, overlay, home, incoming,
                                    transferring, complete, failed, onboarding, settings);
 
   g_object_weak_ref(G_OBJECT(window), window_data_free, data);

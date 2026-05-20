@@ -19,7 +19,6 @@ licenses(["notice"])
 cc_library(
     name = "utils",
     hdrs = ["utils.h"],
-    compatible_with = ["//buildenv/target:non_prod"],
     visibility = [
         "//:__subpackages__",
         "//location/nearby/sharing/lib:__subpackages__",

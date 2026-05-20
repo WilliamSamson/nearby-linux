@@ -26,11 +26,11 @@ static gboolean setup_allows_receiving(const qs_setup_state_t* setup) {
 }
 
 static gboolean sync_visible_state(QsUiState* s, gboolean requested_visible) {
-  qs_facade_set_visible(s->facade, requested_visible);
-  gboolean actual_visible = qs_facade_is_visible(s->facade);
+  qs_service_set_visible(s->service, requested_visible);
+  gboolean actual_visible = qs_service_is_visible(s->service);
   qs_view_home_set_visible(s->home, actual_visible);
   qs_view_home_set_backend_state(s->home,
-                                 qs_facade_get_backend_state(s->facade));
+                                 qs_service_get_backend_state(s->service));
   return actual_visible;
 }
 
@@ -40,7 +40,9 @@ static void apply_setup_state(QsUiState* s, const qs_setup_state_t* setup) {
     qs_view_home_set_device_name(s->home, setup->device_name);
   }
   qs_view_home_set_backend_state(
-      s->home, qs_facade_get_backend_state(s->facade));
+      s->home, qs_service_get_backend_state(s->service));
+  qs_view_home_set_notifications_enabled(
+      s->home, qs_service_get_notifications_enabled(s->service));
   show_page(s->stack, setup->is_complete ? "home" : "onboarding");
   if (setup->is_complete) {
     sync_visible_state(s, setup_allows_receiving(setup));
@@ -108,18 +110,54 @@ static void on_session_ended(qs_session_t* session G_GNUC_UNUSED,
 
 static void on_home_settings(gpointer user_data) {
   QsUiState* s = user_data;
+  
+  // Populate settings view with values from the service
+  const qs_setup_state_t* setup = qs_service_get_setup_state(s->service);
+  if (setup && setup->device_name) {
+    qs_view_settings_set_device_name(s->settings, setup->device_name);
+  }
+  const char* save_path = qs_service_get_save_path(s->service);
+  if (save_path) {
+    qs_view_settings_set_save_path(s->settings, save_path);
+  }
+  gboolean notif_enabled = qs_service_get_notifications_enabled(s->service);
+  qs_view_settings_set_notifications_enabled(s->settings, notif_enabled);
+
   show_page(s->stack, "settings");
 }
 
 static void on_settings_back(gpointer user_data) {
   QsUiState* s = user_data;
+
+  // Read updated values from settings view
+  const char* name = qs_view_settings_get_device_name(s->settings);
+  const char* save_path = qs_view_settings_get_save_path(s->settings);
+  gboolean notif_enabled = qs_view_settings_get_notifications_enabled(s->settings);
+
+  // Update service
+  const qs_setup_state_t* old_setup = qs_service_get_setup_state(s->service);
+  qs_setup_config_t config = {
+    .device_name = name,
+    .receive_policy = old_setup ? old_setup->receive_policy : QS_RECEIVE_NO_ONE,
+    .usage_reporting_enabled = old_setup ? old_setup->usage_reporting_enabled : FALSE,
+  };
+  qs_service_complete_setup(s->service, &config);
+
+  if (save_path) {
+    qs_service_set_save_path(s->service, save_path);
+  }
+  qs_service_set_notifications_enabled(s->service, notif_enabled);
+
+  // Refresh setup and visible state
+  apply_setup_state(s, qs_service_get_setup_state(s->service));
+
   show_page(s->stack, "home");
 }
 
 static void on_home_toggle(gboolean visible, gpointer user_data) {
   QsUiState* s = user_data;
   gboolean actual_visible = sync_visible_state(s, visible);
-  const qs_backend_state_t* backend = qs_facade_get_backend_state(s->facade);
+  const qs_backend_state_t* backend = qs_service_get_backend_state(s->service);
   if (visible && !actual_visible) {
     const char* message =
         backend && backend->summary ? backend->summary : "Receiving is not available";
@@ -166,17 +204,59 @@ static void on_failed_dismiss(gpointer user_data) {
 static void on_onboarding_done(const qs_setup_config_t* config,
                                 gpointer user_data) {
   QsUiState* s = user_data;
-  qs_setup_result_t result = qs_facade_complete_setup(s->facade, config);
+  qs_setup_result_t result = qs_service_complete_setup(s->service, config);
   if (result != QS_SETUP_OK) {
     AdwToast* toast = adw_toast_new(qs_setup_result_message(result));
     adw_toast_set_timeout(toast, 4);
     adw_toast_overlay_add_toast(s->toast_overlay, toast);
     return;
   }
-  apply_setup_state(s, qs_facade_get_setup_state(s->facade));
+  apply_setup_state(s, qs_service_get_setup_state(s->service));
 }
 
-QsUiState* qs_ui_state_new(qs_facade_t* facade,
+struct DiscoveredDevice {
+  char* name;
+  char* ip;
+  int port;
+  QsUiState* s;
+};
+
+static gboolean add_device_idle(gpointer data) {
+  struct DiscoveredDevice* d = data;
+  qs_view_home_add_discovered_device(d->s->home, d->name, d->ip, d->port);
+  g_free(d->name);
+  g_free(d->ip);
+  g_free(d);
+  return G_SOURCE_REMOVE;
+}
+
+static void on_device_discovered(const char* name, const char* ip, int port, void* user_data) {
+  QsUiState* s = user_data;
+  struct DiscoveredDevice* d = g_new0(struct DiscoveredDevice, 1);
+  d->name = g_strdup(name);
+  d->ip = g_strdup(ip);
+  d->port = port;
+  d->s = s;
+  g_main_context_invoke(NULL, add_device_idle, d);
+}
+
+static void on_home_send_file(const char* file_path, gpointer user_data) {
+  QsUiState* s = user_data;
+  g_free(s->current_send_file_path);
+  s->current_send_file_path = g_strdup(file_path);
+  qs_service_start_discovery(s->service, on_device_discovered, s);
+}
+
+static void on_home_device_selected(const char* ip, int port, gpointer user_data) {
+  QsUiState* s = user_data;
+  qs_service_stop_discovery(s->service);
+  
+  qs_view_home_reset_send_mode(s->home);
+  
+  qs_service_send_file(s->service, ip, port, s->current_send_file_path);
+}
+
+QsUiState* qs_ui_state_new(qs_service_t* service,
                            AdwViewStack* stack,
                            AdwToastOverlay* toast_overlay,
                            QsViewHome* home,
@@ -187,7 +267,7 @@ QsUiState* qs_ui_state_new(qs_facade_t* facade,
                            QsViewOnboarding* onboarding,
                            QsViewSettings* settings) {
   QsUiState* s = g_new0(QsUiState, 1);
-  s->facade = facade;
+  s->service = service;
   s->stack = stack;
   s->toast_overlay = toast_overlay;
   s->home = home;
@@ -200,6 +280,8 @@ QsUiState* qs_ui_state_new(qs_facade_t* facade,
 
   qs_view_home_set_on_toggle(home, on_home_toggle, s);
   qs_view_home_set_on_settings(home, on_home_settings, s);
+  qs_view_home_set_on_send_file(home, on_home_send_file, s);
+  qs_view_home_set_on_device_selected(home, on_home_device_selected, s);
   qs_view_incoming_set_on_accept(incoming, on_incoming_accept, s);
   qs_view_incoming_set_on_reject(incoming, on_incoming_reject, s);
   qs_view_transferring_set_on_cancel(transferring, on_transferring_cancel, s);
@@ -211,20 +293,21 @@ QsUiState* qs_ui_state_new(qs_facade_t* facade,
   qs_view_onboarding_set_on_done(onboarding, on_onboarding_done, s);
   qs_view_settings_set_on_back(settings, on_settings_back, s);
 
-  qs_facade_observer_t obs = {
+  qs_service_observer_t obs = {
     .on_session_started = on_session_started,
     .on_session_changed = on_session_changed,
     .on_session_ended = on_session_ended,
     .user_data = s,
   };
-  qs_facade_set_observer(facade, &obs);
-  apply_setup_state(s, qs_facade_get_setup_state(facade));
+  qs_service_set_observer(service, &obs);
+  apply_setup_state(s, qs_service_get_setup_state(service));
   return s;
 }
 
 void qs_ui_state_free(QsUiState* s) {
   if (!s) return;
-  qs_facade_set_observer(s->facade, NULL);
+  qs_service_set_observer(s->service, NULL);
+  g_free(s->current_send_file_path);
   g_free(s);
 }
 

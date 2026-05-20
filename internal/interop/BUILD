@@ -68,7 +68,6 @@ cc_library(
     hdrs = [
         "fake_device_provider.h",
     ],
-    compatible_with = ["//buildenv/target:non_prod"],
     visibility = [
         "//third_party/nearby/presence:__subpackages__",
     ],

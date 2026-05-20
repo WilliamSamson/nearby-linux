@@ -25,8 +25,6 @@
 #include <utility>
 #include <vector>
 
-#include "google/nearby/identity/v1/resources.pb.h"
-#include "google/nearby/identity/v1/rpcs.pb.h"
 #include "location/nearby/sharing/lib/account/account_manager.h"
 #include "location/nearby/sharing/lib/account/fake_account_manager.h"
 #include "location/nearby/sharing/lib/rpc/fake_nearby_share_client.h"
